@@ -1,0 +1,16 @@
+CC=g++
+AR=ar 
+CFLAGS=-c -std=c++0x 
+ARFLAGS=-ruv
+LIBS=
+SOURCES=alglibinternal.cpp ap.cpp diffequations.cpp integration.cpp linalg.cpp solvers.cpp statistics.cpp alglibmisc.cpp dataanalysis.cpp fasttransforms.cpp interpolation.cpp optimization.cpp specialfunctions.cpp
+OBJECTS=$(SOURCES:.cpp=.o)
+LIBNAME=libalg.a
+
+all: $(LIBNAME)
+
+$(LIBNAME): $(OBJECTS) 
+	$(AR) $(ARFLAGS) $(LIBNAME) $(OBJECTS)
+
+.cpp.o:
+	$(CC) $(CFLAGS) $<

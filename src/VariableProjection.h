@@ -2,12 +2,16 @@
 #define __APPROXIMATOR_INCLUDED__
 
 #include <iostream>
+#include <thread>
 #include "IOptimazible.h"
 #include "MatHelper.h"
 #include "NelderMead.h"
+#include "matplotlibcpp.h"
 #include "LevenbergMarquardt.h"
 #include <Eigen/QR>
 //#include "ApproxStat.h"
+
+namespace plt = matplotlibcpp;
 
 namespace APPRSDK
 {
@@ -42,10 +46,13 @@ class VariableProjection : public IOptimazible<T>
 		IApproxStrategy<T, VariableProjection<T>* >* _approximationStrategy;
 		FunctionSystemDerivative<T>* _functionSystem;
 
+		bool _show = false;
+
         bool checkInput();
 		
 		void formJacobian();
 		void InitParamsForOptimiser(int numberOfParamVecsNeeded);
+
 	public:
 		VariableProjection();
 		virtual ~VariableProjection();
@@ -78,6 +85,27 @@ class VariableProjection : public IOptimazible<T>
 			formJacobian();
 			std::cout<<"current position: "<<nonLinParams<<std::endl;
 			std::cout<<"current error: "<<_currentError<<std::endl;
+
+			if (_show)
+			{
+				std::vector<T> x, y_sig, y_apr;
+				
+				for (int i = 0; i < _signal.cols(); ++i)
+				{
+					x.push_back(i);
+					y_sig.push_back(_signal(0, i));
+					y_apr.push_back(_approximation(0, i));
+				}
+
+				plt::clf();
+				plt::named_plot("signal", x, y_sig);
+				plt::named_plot("approximation", x, y_apr, "r-");
+				plt::legend();
+				plt::title("APPRSDK Demo");
+				plt::show();
+				plt::pause(0.1);
+			}
+
 			return _currentError;
 		}
 
@@ -102,6 +130,11 @@ class VariableProjection : public IOptimazible<T>
 			{
 				_approximationStrategy->SetBoundaries(lb, ub);
 			}
+		}
+
+		void SetShow(bool show)
+		{
+			_show = show;
 		}
 };
 
@@ -373,11 +406,6 @@ void VariableProjection<T>::Varpro()
 template<typename T>
 void VariableProjection<T>::formJacobian()
 {
-	//TODO:
-	//1. typedef a hosszu kiirasok helyett.
-	//2. std tarolok helyett hasznalj eigen-t -> ne kelljenek a convert fuggvenyek
-	//3. Ha megis kell konvertalni, akkor ne adj at membereket pl. convertVecToMat(_nonLinParams) ne legyen
-	//4. Ezt a metodust szet kell bontani tobb privat metodusba.
 	EMatrix<T> funSys = _functionSystem->GetFunctionSystem();
 	EMatrix<T> dPhi = _functionSystem->GetPartialDerivativesFunctionSystem();
 	EMatrix<T> s;
